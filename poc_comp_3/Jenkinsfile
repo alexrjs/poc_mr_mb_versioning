@@ -1,0 +1,95 @@
+#!/usr/bin/env groovy
+
+library("versions@$BRANCH_NAME") _
+
+pipeline {
+    agent any
+
+    environment {
+        REPO_UN = 'Linux Worker'
+        REPO_EM = 'linux.worker@aol.com'
+        REPO_URL = 'ssh://git@servix/extra/git/poc_comp_3.git'
+    }
+    stages {
+        stage('Initialize') {
+            post {
+                success {
+                    vsuccess 'Initialize', {}
+                }
+                failure {
+                    vfailure 'Initialize', {}
+                }
+            }
+            steps {
+                echo 'Initializing...'
+                sh 'printenv'
+            }
+        }
+        stage('Build') {
+            post {
+                success {
+                    vsuccess 'Build', {}
+                }
+                failure {
+                    vfailure 'Build', {}
+                }
+            }
+            steps {
+                retry(3) {
+                    echo 'Building...'
+                    random()
+                }
+            }
+        }
+        stage('Test') {
+            post {
+                success {
+                    vsuccess 'Test', {}
+                }
+                failure {
+                    vfailure 'Test', {}
+                }
+            }
+            steps {
+                retry(3) {
+                    echo 'Testing...'
+                    random()
+                }
+            }
+        }
+        stage('Deploy') {
+            post {
+                success {
+                    vsuccess 'Deploy', {}, false
+                }
+                failure {
+                    vfailure 'Deploy', {}
+                }
+            }
+            steps {
+                retry(3) {
+                    echo 'Deploying...'
+                    random()
+                }
+                // For Major, Minor or Path use: 
+                // bumpversion('1.0.2.0')
+                // For Build versioning use:
+                bumpversion()
+            }            
+        }
+        stage('Trigger') {
+            post {
+                failure {
+                    vfailure 'Trigger', {}
+                }
+            }
+            steps {
+                echo 'Triggering....'
+                script {
+                    build job: "/poc_versions/p_poc_main_mb/${env.BRANCH_NAME}", parameters: [], wait: false, quietPeriod: 15
+                    echo 'Triggering.... done'
+                }
+            }            
+        }
+    }
+}

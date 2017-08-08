@@ -1,0 +1,3 @@
+poc_comp_1:latest
+poc_comp_2:latest
+poc_comp_3:1.0.0.0

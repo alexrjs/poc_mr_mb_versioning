@@ -1,0 +1,46 @@
+#!/usr/bin/env groovy
+
+library("versions@$BRANCH_NAME") _
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Initialize') {
+            post {
+                success {
+                    vsuccess 'Initialize', {}
+                }
+                failure {
+                    vfailure 'Initialize', {}
+                }
+            }
+            steps {
+                echo 'Initializing..'
+                sh 'printenv'
+            }
+        }
+
+        stage('Deploy') {
+            post {
+                success {
+                    vsuccess 'Deploy', {}, false
+                }
+                failure {
+                    vfailure 'Deploy', {}
+                }
+            }
+            steps {
+                echo 'Deploying....'
+                versions(this, './components.txt') {
+                    echo "Deploying ${versions.component} with version ${versions.version}"
+                    echo "Do deploy..."
+                }
+                // For Major, Minor or Path use: 
+                // bumpversion('1.0.2.0')
+                // For Build versioning use:
+                bumpversion()
+            }            
+        }
+    }
+}
